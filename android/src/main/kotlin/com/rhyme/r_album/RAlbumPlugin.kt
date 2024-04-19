@@ -50,7 +50,7 @@ public class RAlbumPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-   private fun saveAlbum(call: MethodCall, result: Result) {
+private fun saveAlbum(call: MethodCall, result: Result) {
 
     val albumName = call.argument<String>("albumName")
     val filePaths = call.argument<List<String>>("filePaths")
@@ -97,6 +97,9 @@ public class RAlbumPlugin : FlutterPlugin, MethodCallHandler {
                 result.success(true)
             }
         } catch (e: Exception) {
+            // Log the exception
+            Log.e("SaveAlbum", "Error saving file: ${e.message}")
+            e.printStackTrace()
             handler.post {
                 result.success(false)
             }
