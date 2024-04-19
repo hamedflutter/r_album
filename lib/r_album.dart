@@ -1,7 +1,3 @@
-// Copyright 2020 The rhyme_lph Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 import 'dart:async';
 
 import 'package:flutter/services.dart';
@@ -19,10 +15,11 @@ class RAlbum {
 
   /// save files in album
   static Future<bool?> saveAlbum(
-      String albumName, List<String> filePaths) async {
+      String albumName, List<String> filePaths, List<String> fileNames) async { // Add fileNames parameter
     return await _channel.invokeMethod('saveAlbum', {
       'albumName': albumName,
       'filePaths': filePaths,
+      'fileNames': fileNames, // Pass file names along with file paths
     });
   }
 }
