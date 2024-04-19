@@ -51,52 +51,54 @@ public class RAlbumPlugin : FlutterPlugin, MethodCallHandler {
 
     private fun saveAlbum(call: MethodCall, result: Result) {
 
-        val albumName = call.argument<String>("albumName")
-        val filePaths = call.argument<List<String>>("filePaths")
-        if (albumName == null) {
-            result.error("100", "albumName is not null", null)
-            return
+    val albumName = call.argument<String>("albumName")
+    val fileNames = call.argument<List<String>>("fileNames") // Changed argument name to fileNames
+    val filePaths = call.argument<List<String>>("filePaths")
+    if (albumName == null) {
+        result.error("100", "albumName is not null", null)
+        return
+    }
+    if (fileNames == null || filePaths == null) { // Check for both fileNames and filePaths
+        result.error("101", "fileNames and/or filePaths is not null", null)
+        return
+    }
+    thread {
+        val rootFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), albumName)
+        if (!rootFile.exists()) {
+            rootFile.mkdirs()
         }
-        if (filePaths == null) {
-            result.error("101", "filePaths is not null", null)
-            return
-        }
-        thread {
-            val rootFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), albumName)
-            if (!rootFile.exists()) {
-                rootFile.mkdirs()
+
+        var resultPaths = mutableListOf<String>()
+
+        for ((index, path) in filePaths.withIndex()) {
+            val suffix: String = path.substring(path.lastIndexOf(".") + 1)
+            val fileName = fileNames[index] // Retrieve file name from the list
+            val itemFile = File(rootFile, "${fileName}.$suffix") // Use the provided file name
+            if (!itemFile.exists()) itemFile.createNewFile()
+
+            val outPut = itemFile.outputStream()
+            val inPut = FileInputStream(path)
+            val buf = ByteArray(1024)
+            var len = 0
+            while (true) {
+                len = inPut.read(buf)
+                if (len == -1) break
+                outPut.write(buf, 0, len)
             }
+            outPut.flush()
+            outPut.close()
 
-            var resultPaths = mutableListOf<String>()
-
-            for (path in filePaths) {
-                val suffix: String = path.substring(path.lastIndexOf(".") + 1)
-                val itemFile = File(rootFile, "${System.currentTimeMillis()}.$suffix")
-                if (!itemFile.exists()) itemFile.createNewFile()
-
-                val outPut = itemFile.outputStream()
-                val inPut = FileInputStream(path)
-                val buf = ByteArray(1024)
-                var len = 0
-                while (true) {
-                    len = inPut.read(buf)
-                    if (len == -1) break
-                    outPut.write(buf, 0, len)
-                }
-                outPut.flush()
-                outPut.close()
-
-                inPut.close()
-                resultPaths.add(itemFile.absolutePath)
-                handler.post {
-                    context!!.sendBroadcast(Intent(ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(itemFile)))
-                }
-            }
+            inPut.close()
+            resultPaths.add(itemFile.absolutePath)
             handler.post {
-                result.success(resultPaths)
+                context!!.sendBroadcast(Intent(ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(itemFile)))
             }
+        }
+        handler.post {
+            result.success(resultPaths)
         }
     }
+}
 
     private fun createAlbum(call: MethodCall, result: Result) {
         val albumName = call.argument<String>("albumName")
