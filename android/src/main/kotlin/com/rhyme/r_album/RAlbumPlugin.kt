@@ -16,7 +16,6 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.File
 import java.io.FileInputStream
-import java.lang.Exception
 import kotlin.concurrent.thread
 
 /** RAlbumPlugin */
@@ -50,31 +49,31 @@ public class RAlbumPlugin : FlutterPlugin, MethodCallHandler {
         }
     }
 
-private fun saveAlbum(call: MethodCall, result: Result) {
+    private fun saveAlbum(call: MethodCall, result: Result) {
 
-    val albumName = call.argument<String>("albumName")
-    val filePaths = call.argument<List<String>>("filePaths")
-    if (albumName == null) {
-        result.error("100", "albumName is not null", null)
-        return
-    }
-    if (filePaths == null) {
-        result.error("101", "filePaths is not null", null)
-        return
-    }
-    thread {
-        val rootFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), albumName)
-        if (!rootFile.exists()) {
-            rootFile.mkdirs()
+        val albumName = call.argument<String>("albumName")
+        val filePaths = call.argument<List<String>>("filePaths")
+        if (albumName == null) {
+            result.error("100", "albumName is not null", null)
+            return
         }
+        if (filePaths == null) {
+            result.error("101", "filePaths is not null", null)
+            return
+        }
+        thread {
+            val rootFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), albumName)
+            if (!rootFile.exists()) {
+                rootFile.mkdirs()
+            }
 
-        val resultPaths = mutableListOf<String>()
+            var resultPaths = mutableListOf<String>()
 
-        try {
             for (path in filePaths) {
-                val fileName: String = File(path).name // Extract file name from path
-                val itemFile = File(rootFile, fileName)
+                val suffix: String = path.substring(path.lastIndexOf(".") + 1)
+                val itemFile = File(rootFile, "${System.currentTimeMillis()}.$suffix")
                 if (!itemFile.exists()) itemFile.createNewFile()
+
                 val outPut = itemFile.outputStream()
                 val inPut = FileInputStream(path)
                 val buf = ByteArray(1024)
@@ -94,24 +93,15 @@ private fun saveAlbum(call: MethodCall, result: Result) {
                 }
             }
             handler.post {
-                result.success(true)
-            }
-        } catch (e: Exception) {
-            // Log the exception
-            Log.e("SaveAlbum", "Error saving file: ${e.message}")
-            e.printStackTrace()
-            handler.post {
-                result.success(false)
+                result.success(resultPaths)
             }
         }
     }
-}
-
 
     private fun createAlbum(call: MethodCall, result: Result) {
         val albumName = call.argument<String>("albumName")
         if (albumName == null) {
-            result.success(false)
+            result.error("100", "albumName is not null", null)
             return
         }
         thread {
@@ -120,13 +110,13 @@ private fun saveAlbum(call: MethodCall, result: Result) {
                 rootFile.mkdirs()
             }
             handler.post {
-                result.success(true)
+                result.success(rootFile.absolutePath)
             }
         }
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         context = null
-
+        
     }
 }
