@@ -63,7 +63,7 @@ public class RAlbumPlugin : FlutterPlugin, MethodCallHandler {
         return
     }
     thread {
-        val rootFile = File(Environment.getExternalStorageDirectory(), "gasketguy/$albumName") // Custom folder "gasketguy"
+        val rootFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), albumName)
         if (!rootFile.exists()) {
             rootFile.mkdirs()
         }
@@ -107,7 +107,7 @@ public class RAlbumPlugin : FlutterPlugin, MethodCallHandler {
             return
         }
         thread {
-        val rootFile = File(Environment.getExternalStorageDirectory(), "gasketguy/$albumName") // Custom folder "gasketguy"
+            val rootFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), albumName)
             if (!rootFile.exists()) {
                 rootFile.mkdirs()
             }
